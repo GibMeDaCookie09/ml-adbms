@@ -1,0 +1,34 @@
+# SVM 
+# Remove warnings
+import warnings
+warnings.filterwarnings('ignore')
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, ConfusionMatrixDisplay
+
+# Load the dataset
+data = pd.read_csv("./Datasets/UniversalBank.csv")
+
+# Drop irrelevant columns
+data = data.drop(['ID', 'ZIP Code'], axis=1)
+
+# Separate features and target variable
+X = data.drop('PersonalLoan', axis=1)  # Assuming 'PersonalLoan' is the target
+y = data['PersonalLoan']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train SVM with different kernels and compare accuracy
+kernels = ['linear', 'rbf', 'poly']
+for kernel in kernels:
+    model = SVC(kernel=kernel)
+    model.fit(X_train, y_train)
+    
+    # Make predictions and calculate accuracy
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Accuracy with {kernel} kernel: {accuracy}")
+    ConfusionMatrixDisplay.from_predictions(y_test, y_pred)

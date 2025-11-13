@@ -1,0 +1,57 @@
+# KMeans
+import warnings
+warnings.filterwarnings('ignore')
+
+import pandas as pd
+
+data = pd.read_csv('./Datasets/Social_Network_Ads.csv')
+data.head()
+
+X = data[['EstimatedSalary']]
+y = data['Age']
+from sklearn.preprocessing import StandardScaler
+
+X_scaled = StandardScaler().fit_transform(X)
+from sklearn.cluster import KMeans
+
+inertia = []
+
+for i in range(1, 11):
+  km = KMeans(n_clusters = i, random_state=0)
+  km.fit(X_scaled)
+  inertia.append(km.inertia_)
+
+inertia
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(16,9))
+plt.title('Elbow Method for finding Optimal K')
+plt.xlabel('NO. of Cluster')
+plt.ylabel('Inertia')
+plt.plot(range(1,11), inertia, marker='o', color='r')
+plt.grid()
+plt.xticks(range(1,11))
+plt.show()
+
+km = KMeans(n_clusters=5, random_state=0)
+labels = km.fit_predict(X_scaled)
+labels
+
+centroids = km.cluster_centers_
+centroids
+
+plt.figure(figsize=(16,9))
+
+plt.subplot(1,2,1)
+plt.title('Unclustered Data')
+plt.xlabel('Estimated Salary')
+plt.ylabel('Age')
+plt.scatter(X, y)
+
+plt.subplot(1,2,2)
+plt.title('Clustered Data')
+plt.xlabel('Estimated Salary')
+plt.ylabel('Age')
+plt.scatter(X, y, c=labels)
+

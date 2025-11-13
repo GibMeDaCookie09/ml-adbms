@@ -1,0 +1,61 @@
+# KMeans
+import numpy as np
+
+# Define the points (data points)
+points = np.array([
+  [0.1, 0.6],  # Point 1
+  [0.15, 0.71],  # Point 2
+  [0.08, 0.9],  # Point 3
+  [0.16, 0.85],  # Point 4
+  [0.2, 0.3],  # Point 5
+  [0.25, 0.5],  # Point 6
+  [0.24, 0.1],  # Point 7
+  [0.3, 0.2]  # Point 8
+])
+
+# Initial centroids (m1 and m2)
+m1 = points[0]  # The first point [0.1, 0.6] is taken as the initial centroid for Cluster 1
+m2 = points[7]  # The eighth point [0.3, 0.2] is taken as the initial centroid for Cluster 2
+
+# Function to calculate Euclidean distance between a point and a centroid
+def find_euclidean_distance(point, centroid):
+  return np.sqrt(np.sum((point - centroid) ** 2))  # Calculate the squared sum of differences, then square root
+
+# Function to perform K-Means clustering
+def kMeansClustering(points, m1, m2):
+  cluster_1 = []  # Initialize empty list for points in cluster 1
+  cluster_2 = []  # Initialize empty list for points in cluster 2
+
+  # Loop through each point and calculate the distance to the centroids m1 and m2
+  for point in points:
+    euc_dist_1 = find_euclidean_distance(point, m1)  # Calculate distance to m1
+    euc_dist_2 = find_euclidean_distance(point, m2)  # Calculate distance to m2
+
+    # Assign the point to the closest centroid (m1 or m2)
+    if(euc_dist_1 < euc_dist_2):  
+      cluster_1.append(point)  # If m1 is closer, assign point to cluster_1
+    else:
+      cluster_2.append(point)  # If m2 is closer, assign point to cluster_2
+    
+  # Calculate new centroids as the mean of points in each cluster
+  new_m1 = np.mean(cluster_1, axis=0)  # New centroid for cluster 1
+  new_m2 = np.mean(cluster_2, axis=0)  # New centroid for cluster 2
+
+  return cluster_1, cluster_2, new_m1, new_m2  # Return the updated clusters and centroids
+
+# Perform clustering with the initial centroids m1 and m2
+cluster_1, cluster_2, new_m1, new_m2 = kMeansClustering(points, m1, m2)
+
+# Check the cluster assignment for point 6 (p6)
+p6 = points[5]  # Point 6 is [0.25, 0.5]
+# Find the cluster for point 6 based on the new centroids
+p6_cluster = "C1" if(find_euclidean_distance(p6, new_m1) < find_euclidean_distance(p6, new_m2)) else "C2"
+
+# Print the results
+print("Cluster assignments:")
+print("Cluster 1 (C1):", cluster_1)  # Points in Cluster 1
+print("Cluster 2 (C2):", cluster_2)  # Points in Cluster 2
+print()
+print("1. P6 belongs to ", p6_cluster)  # Output the cluster for point 6
+print("2. Population of cluster around m2 is ", len(cluster_2), "\nPopulation of Cluster around m1 is ", len(cluster_1))  # Population size of each cluster
+print("3. New m1 : ", new_m1, "\nNew m2 : ", new_m2)  # Output the new centroids

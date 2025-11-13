@@ -1,0 +1,51 @@
+# LinearRegression
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Step 1: Load the dataset
+data = pd.read_csv('./Datasets/1.01. Simple linear regression.csv')
+
+# Step 2: Check for missing values
+print(data.isnull().sum())
+
+# Step 3: Correlation between SAT and GPA
+correlation = data.corr()
+print(f"Correlation between SAT and GPA: {correlation.iloc[0, 1]}")
+
+# Step 4: Building the Simple Linear Regression Model
+X = data[['SAT']]  # Independent variable (SAT score)
+y = data['GPA']    # Dependent variable (GPA)
+
+# Split the data into training and testing sets (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize the Linear Regression model
+model = LinearRegression()
+
+# Train the model
+model.fit(X_train, y_train)
+
+# Predictions
+y_pred = model.predict(X_test)
+
+# Step 5: Model Evaluation
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"Mean Squared Error: {mse}")
+print(f"R^2 Score: {r2}")
+
+# Step 6: Plotting the regression line
+# plt.figure(figsize=(8,6))
+# sns.scatterplot(x='SAT', y='GPA', data=data, color='blue', label='Actual data')
+# plt.plot(X_test, y_pred, color='red', label='Regression line')  # Regression line
+# plt.title('Linear Regression: SAT Score vs GPA')
+# plt.xlabel('SAT Score')
+# plt.ylabel('GPA')
+# plt.legend()
+# plt.show()
+
+sns.regplot(x='SAT', y='GPA', data=data)

@@ -1,0 +1,117 @@
+// Use a specific database
+use order_db_3;
+
+// --- Schema Setup ---
+// Reusing data structure from Task 3 for customer/order separation
+db.customers.drop();
+db.orders.drop();
+
+// Initial Customer Data
+db.customers.insertMany([
+    { cust_no: 101, name: "ABC", age: 25, mob_no: "9876543210", city: "Pune" },
+    { cust_no: 102, name: "XYZ", age: 35, mob_no: "9988776655", city: "Mumbai" },
+    { cust_no: 103, name: "PQR", age: 20, mob_no: "9000011111", city: "Pune" }
+]);
+
+// Initial Order Data (Updated total_amount, dates for queries)
+db.orders.insertMany([
+    { order_id: 1, cust_no: 101, order_date: new Date("2022-03-01"), total_amount: 15000,
+        products: [{ name: "Mobile", quantity: 1, price: 15000 }]
+    },
+    { order_id: 2, cust_no: 102, order_date: new Date("2022-05-10"), total_amount: 30000,
+        products: [{ name: "Laptop", quantity: 1, price: 30000 }]
+    },
+    { order_id: 3, cust_no: 101, order_date: new Date("2022-01-20"), total_amount: 5000,
+        products: [{ name: "PenDrive", quantity: 5, price: 1000 }]
+    },
+    { order_id: 4, cust_no: 103, order_date: new Date("2023-06-01"), total_amount: 40000,
+        products: [{ name: "Shoes", quantity: 1, price: 40000 }]
+    }
+]);
+print("--- Data Insertion Complete ---");
+
+// --- Queries ---
+
+// 1. Display all documents in a collection (orders).
+print("\n1. All orders documents:");
+db.orders.find().pretty();
+
+// 2. List the customer in ascending order of their names.
+print("\n2. Customers sorted by name (ascending):");
+db.customers.find({}, { _id: 0, name: 1 }).sort({ name: 1 }).pretty();
+
+// 3. Display all the orders which placed before April 2022.
+print("\n3. Orders placed before April 2022:");
+db.orders.find({ order_date: { $lt: new Date("2022-04-01") } }).pretty();
+
+// 4. Display Name of Customer who purchased order whose price is more than 25000.
+print("\n4. Customer Name for orders with price > 25000 (using $lookup):");
+db.orders.aggregate([
+    { $match: { total_amount: { $gt: 25000 } } },
+    { $lookup: {
+        from: "customers",
+        localField: "cust_no",
+        foreignField: "cust_no",
+        as: "customer_details"
+    }},
+    { $unwind: "$customer_details" },
+    { $project: { _id: 0, order_id: 1, total_amount: 1, customer_name: "$customer_details.name" } }
+]).pretty();
+
+// 5. Display all orders that contain product "PenDrive".
+print('\n5. Orders containing product "PenDrive":');
+db.orders.find({ "products.name": "PenDrive" }).pretty();
+
+// 6. Update Order_date of Any order Purchased by Customer "ABC" (cust_no 101).
+print('\n6. Updating Order_date of an order by Customer "ABC" (order_id 3):');
+db.orders.updateOne(
+    { cust_no: 101, order_id: 3 },
+    { $set: { order_date: new Date("2022-02-01") } }
+);
+print("Update successful. Verification for Order ID 3:");
+db.orders.find({ order_id: 3 }, { _id: 0, order_id: 1, order_date: 1 }).pretty();
+
+// 7. List all documents with orders that contain products whose quantity is less than 10.
+print("\n7. Orders containing products with quantity < 10:");
+db.orders.find({ "products.quantity": { $lt: 10 } }).pretty();
+
+// 8. Display the Mob No of customers who have highest Buying Total.
+print("\n8. Mobile No. of customer with highest buying total (Aggregation):");
+db.orders.aggregate([
+    { $group: { _id: "$cust_no", grand_total: { $sum: "$total_amount" } } },
+    { $sort: { grand_total: -1 } },
+    { $limit: 1 },
+    { $lookup: {
+        from: "customers",
+        localField: "_id",
+        foreignField: "cust_no",
+        as: "customer_details"
+    }},
+    { $unwind: "$customer_details" },
+    { $project: { _id: 0, customer_name: "$customer_details.name", mob_no: "$customer_details.mob_no", grand_total: 1 } }
+]).pretty();
+
+// 9. Perform Create Index, get Index and drop index operation on collection (orders).
+print("\n9. Index Operations (on orders collection):");
+db.orders.createIndex({ total_amount: -1 });
+print("Created index on 'total_amount'.");
+print("Existing indexes:");
+db.orders.getIndexes();
+db.orders.dropIndex("total_amount_-1");
+print("Dropped index on 'total_amount'.");
+db.orders.getIndexes();
+
+// 10. Using MapReduce/Aggregation display total order per customer.
+print("\n10. Total orders per customer (Aggregation):");
+db.orders.aggregate([
+    { $group: { _id: "$cust_no", total_orders: { $sum: 1 } } },
+    { $lookup: {
+        from: "customers",
+        localField: "_id",
+        foreignField: "cust_no",
+        as: "customer_info"
+    }},
+    { $unwind: "$customer_info" },
+    { $project: { _id: 0, customer_name: "$customer_info.name", total_orders: 1 } },
+    { $sort: { total_orders: -1 } }
+]).pretty();

@@ -1,0 +1,40 @@
+# lp15 : Apriori
+# Import necessary libraries
+import pandas as pd
+from mlxtend.frequent_patterns import apriori, association_rules
+from mlxtend.preprocessing import TransactionEncoder
+
+# Step 1: Data Preprocessing
+# Load the dataset
+data = pd.read_csv('./Datasets/Order1.csv')
+
+# Preview the data to understand its structure
+print("Dataset Preview:")
+print(data.head())
+
+# We assume the dataset contains 'Member_number', 'Date', and 'itemDescription'
+# We will group the data by 'Member_number' to represent each transaction
+# Each 'Member_number' will have a list of items they purchased.
+
+# Step 2: Generate the List of Transactions
+# Group by 'Member_number' and aggregate the 'itemDescription' into a list of items for each transaction
+transactions = data.groupby('Member_number')['itemDescription'].apply(list).values.tolist()
+
+# Step 3: Prepare the Transactions for Apriori
+# Apply the TransactionEncoder
+te = TransactionEncoder()
+te_ary = te.fit_transform(transactions)
+
+# Convert the list into a DataFrame for easier manipulation
+df = pd.DataFrame(te_ary, columns=te.columns_)
+
+# Step 4: Train Apriori on the Dataset
+# Apply the Apriori algorithm to find frequent itemsets
+frequent_itemsets = apriori(df, min_support=0.05, use_colnames=True)  # Adjust the min_support threshold as needed
+# print("\nFrequent Itemsets : \n",frequent_itemsets)
+
+# Step 5: Generate Association Rules
+# Generate the association rules from the frequent itemsets
+# Remove num_itemsets=None if error comes here , it is due to version of mlxtend
+rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.30, num_itemsets=None)
+print("\n",rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']])

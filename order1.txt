@@ -1,0 +1,116 @@
+// Use a specific database
+use order_db_1;
+
+// 1. Initial Data Insertion (Order Management System)
+db.orders.drop();
+db.orders.insertMany([
+    { order_id: 1, customer_name: "John Doe", customer_city: "Pune", total_amount: 35000, order_date: new Date("2023-10-10"),
+        products: [
+            { name: "Mobile", quantity: 1, price: 35000 },
+            { name: "Headphones", quantity: 2, price: 1000 }
+        ]
+    },
+    { order_id: 2, customer_name: "Jane Smith", customer_city: "Mumbai", total_amount: 15000, order_date: new Date("2023-09-01"),
+        products: [
+            { name: "Laptop", quantity: 1, price: 15000 }
+        ]
+    },
+    { order_id: 3, customer_name: "Mike Johnson", customer_city: "Pune", total_amount: 50000, order_date: new Date("2023-11-25"),
+        products: [
+            { name: "Shoes", quantity: 1, price: 5000 },
+            { name: "Cloth", quantity: 5, price: 9000 } // Total 45000
+        ]
+    },
+    { order_id: 4, customer_name: "Sara Lee", customer_city: "Bangalore", total_amount: 10000, order_date: new Date("2023-12-12"),
+        products: [
+            { name: "Pen", quantity: 100, price: 100 }
+        ]
+    },
+    { order_id: 5, customer_name: "Top Buyer", customer_city: "Pune", total_amount: 100000, order_date: new Date("2024-01-05"),
+        products: [
+            { name: "Desktop", quantity: 1, price: 100000 }
+        ]
+    }
+]);
+print("--- Data Insertion Complete ---");
+
+// --- Queries ---
+
+// 1. Retrieve all the documents from collection.
+print("\n1. All documents from orders collection:");
+db.orders.find().pretty();
+
+// 2. List name of Customer who purchased product "Mobile".
+print('\n2. Customer who purchased product "Mobile":');
+db.orders.find({ "products.name": "Mobile" }, { _id: 0, customer_name: 1 }).pretty();
+
+// 3. Change the product quantity from 1 to 3 of product "Laptop" of any order.
+print('\n3. Changing quantity of "Laptop" in one order (Order ID 2):');
+db.orders.updateOne(
+    { order_id: 2, "products.name": "Laptop", "products.quantity": 1 },
+    { $set: { "products.$.quantity": 3 } }
+);
+print("Update successful. Verification for Order ID 2:");
+db.orders.find({ order_id: 2 }, { _id: 0, products: 1 }).pretty();
+
+// 4. Using $exists, tell me how many customers belongs from Pune city.
+// Note: $exists is typically used to check for field presence. We'll use a normal query for Pune count, and then demonstrate $exists on a hypothetical 'discount' field.
+print("\n4. Number of orders from Pune city (Customer City Check):");
+const puneCount = db.orders.countDocuments({ customer_city: "Pune" });
+print(`Total orders from Pune: ${puneCount}`);
+
+print("\n4b. Demonstrating $exists (Counting orders with a 'discount' field):");
+// Add a discount field to some documents for demonstration
+db.orders.updateOne({ order_id: 1 }, { $set: { discount: 500 } });
+const existsCount = db.orders.countDocuments({ discount: { $exists: true } });
+print(`Total orders where 'discount' field exists: ${existsCount}`);
+
+// 5. Find the customer who purchased shoes and cloth product.
+print("\n5. Customer who purchased Shoes AND Cloth:");
+db.orders.find(
+    { 
+        "products": {
+            $all: [
+                { $elemMatch: { name: "Shoes" } },
+                { $elemMatch: { name: "Cloth" } }
+            ]
+        }
+    },
+    { _id: 0, customer_name: 1 }
+).pretty();
+
+// 6. Find the top 3 buyers (based on total_amount).
+print("\n6. Top 3 Buyers (based on total_amount - Aggregation):");
+db.orders.aggregate([
+    { $sort: { total_amount: -1 } },
+    { $limit: 3 },
+    { $project: { _id: 0, customer_name: 1, total_amount: 1 } }
+]).pretty();
+
+// 7. Display all the orders where total amount is >20000.
+print("\n7. Orders where total amount is >20000:");
+db.orders.find({ total_amount: { $gt: 20000 } }, { _id: 0, order_id: 1, customer_name: 1, total_amount: 1 }).pretty();
+
+// 8. Perform Create Index, get Index and drop index operation on collection.
+print("\n8. Index Operations:");
+db.orders.createIndex({ total_amount: -1 });
+print("Created index on 'total_amount'.");
+print("Existing indexes:");
+db.orders.getIndexes();
+db.orders.dropIndex("total_amount_-1");
+print("Dropped index on 'total_amount'.");
+db.orders.getIndexes();
+
+// 9. Write a MapReduce or aggregation function which will return the Total Price per order.
+print("\n9. Total Price per order (Aggregation - already stored, but re-calculated for demo):");
+db.orders.aggregate([
+    // Unwind is necessary if you need to calculate price per item before summing
+    { $unwind: "$products" },
+    { $group: {
+        _id: "$order_id",
+        customer: { $first: "$customer_name" },
+        calculated_total: { $sum: { $multiply: ["$products.quantity", "$products.price"] } }
+    }},
+    { $sort: { _id: 1 } },
+    { $project: { _id: 0, order_id: "$_id", customer: 1, calculated_total: 1 } }
+]).pretty();

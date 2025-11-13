@@ -1,0 +1,94 @@
+// Use a specific database
+use student_db;
+
+// 1. Initial Data Insertion (Student Management System)
+db.students.drop();
+db.students.insertMany([
+    { student_id: 201, student_name: "Sneha Patil", dept: "CSE", address: "Mumbai", birthdate: new Date("2003-05-20"), CGPA: 9.1, fee: 150000, current_year: "BE", join_date: new Date("2020-08-01"), skills: ["Programming", "Typing"] },
+    { student_id: 202, student_name: "Manish Shah", dept: "IT", address: "Pune", birthdate: new Date("2005-02-15"), CGPA: 8.5, fee: 120000, current_year: "SE", join_date: new Date("2022-08-01"), skills: ["Networking", "Typing"] },
+    { student_id: 203, student_name: "Sunil Verma", dept: "CSE", address: "Baroda", birthdate: new Date("2004-12-01"), CGPA: 7.8, fee: 140000, current_year: "TE", join_date: new Date("2021-08-01"), skills: ["Coding"] },
+    { student_id: 204, student_name: "Amit Deshmukh", dept: "CSE", address: "Ahmedabad", birthdate: new Date("2003-09-20"), CGPA: 9.5, fee: 155000, current_year: "BE", join_date: new Date("2020-08-01"), skills: ["Algorithms"] },
+    { student_id: 205, student_name: "Priya Singh", dept: "ETC", address: "Pune", birthdate: new Date("2006-03-10"), CGPA: 8.9, fee: 110000, current_year: "FE", join_date: new Date("2023-08-01"), skills: ["Electronics"] },
+    { student_id: 206, student_name: "Harsh Gupta", dept: "ETC", address: "Pune", birthdate: new Date("2005-07-25"), CGPA: 7.5, fee: 110000, current_year: "FE", join_date: new Date("2023-08-01"), skills: ["Typing"] }
+]);
+print("--- Data Insertion Complete ---");
+
+// --- Queries ---
+const today = new Date();
+
+// 1. Display the count of total no students from institute.
+print("\n1. Total number of students:");
+db.students.countDocuments({});
+
+// 2. Display all the Students in seniority level (based on CGPA).
+print("\n2. Students sorted by CGPA (seniority):");
+db.students.find({}, { _id: 0, student_name: 1, CGPA: 1, current_year: 1 }).sort({ CGPA: -1 }).pretty();
+
+// 3. List the student details that are from Baroda or Ahmedabad and in CSE department.
+print("\n3. Students from Baroda or Ahmedabad in CSE department:");
+db.students.find({
+    dept: "CSE",
+    address: { $in: ["Baroda", "Ahmedabad"] }
+}).pretty();
+
+// 4. List of the studentid, studentname, department number and skill of student whose birth date is 20th of any month.
+print("\n4. Students with birth date on the 20th of any month:");
+db.students.find({
+    $expr: { $eq: [{ $dayOfMonth: "$birthdate" }, 20] }
+}, { _id: 0, student_id: 1, student_name: 1, dept: 1, skills: 1 }).pretty();
+
+// 5. Calculate age of each student.
+print("\n5. Student age calculation (in years):");
+db.students.aggregate([
+    { $addFields: {
+        age_ms: { $subtract: [today, "$birthdate"] }
+    }},
+    { $addFields: {
+        age_years: { $divide: ["$age_ms", 365.25 * 24 * 60 * 60 * 1000] } // Convert milliseconds to years
+    }},
+    { $project: { _id: 0, student_name: 1, birthdate: 1, age: { $round: ["$age_years", 0] } } }
+]).pretty();
+
+// 6. List the name of student whose name staring with 's' or 'm' character who are in computer department and having typing skill.
+print('\n6. Students (S/M name) in CSE/IT dept with "Typing" skill:');
+db.students.find({
+    dept: { $in: ["CSE", "IT"] }, // Assuming 'computer department' means CSE or IT
+    student_name: { $regex: "^[SMsm]" },
+    skills: "Typing"
+}, { _id: 0, student_name: 1, dept: 1, skills: 1 }).pretty();
+
+// 7. Count the no of student in IT department of Pune.
+print("\n7. Count of students in IT department in Pune:");
+db.students.countDocuments({ dept: "IT", address: "Pune" });
+
+// 8. Arrange the student name in alphabetic order whose age between 18 to 20 and in ETC department.
+print("\n8. Students in ETC, age 18-20, sorted by name:");
+db.students.aggregate([
+    { $addFields: {
+        age_years: { $divide: [{ $subtract: [today, "$birthdate"] }, 365.25 * 24 * 60 * 60 * 1000] }
+    }},
+    { $match: {
+        dept: "ETC",
+        age_years: { $gte: 18, $lte: 20 }
+    }},
+    { $sort: { student_name: 1 } },
+    { $project: { _id: 0, student_name: 1, dept: 1, age: { $round: ["$age_years", 0] } } }
+]).pretty();
+
+// 9. Perform Create Index, get Index and drop index operation on collection.
+print("\n9. Index Operations:");
+db.students.createIndex({ CGPA: -1 });
+print("Created index on 'CGPA'.");
+print("Existing indexes:");
+db.students.getIndexes();
+db.students.dropIndex("CGPA_-1");
+print("Dropped index on 'CGPA'.");
+db.students.getIndexes();
+
+// 10. Write mapreduce or aggregation function to Display total no of students from each department.
+print("\n10. Total number of students from each department (Aggregation):");
+db.students.aggregate([
+    { $group: { _id: "$dept", total_students: { $sum: 1 } } },
+    { $project: { _id: 0, department: "$_id", count: "$total_students" } },
+    { $sort: { count: -1 } }
+]).pretty();

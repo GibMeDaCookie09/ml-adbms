@@ -1,0 +1,82 @@
+
+# Naive Bayes
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Load the dataset
+data = pd.read_csv('./Datasets/NaiveBayes.csv')
+
+# Preprocessing
+# Separate features and target variable
+X = data[['Age', 'Salary']]
+y = data['Purchased']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the Gaussian Naïve Bayes model
+model = GaussianNB()
+model.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+report = classification_report(y_test, y_pred)
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy: ",accuracy)
+
+# Confusion matrix
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+# Classification report (precision, recall, f1-score)
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# Testing on a random sample from the test set
+# import random
+# random_index = random.randint(0, len(X_test) - 1)
+# random_sample = X_test.iloc[random_index:random_index+1]
+# random_pred = model.predict(random_sample)
+# print(f"Random Sample Prediction: {random_pred[0]}")
+# print("Actual Value:", y_test.iloc[random_index])
+
+# Taking user input and making a prediction
+# try:
+#     user_age = int(input("Enter Age: "))
+#     print("\nAge : ",user_age)
+#     user_salary = int(input("Enter Salary: "))
+#     print("Salary : ",user_salary)
+
+#     # Convert user input to a DataFrame with matching column names
+#     user_data = pd.DataFrame([[user_age, user_salary]], columns=['Age', 'Salary'])
+
+#     # Predict purchase decision based on user input
+#     user_prediction = model.predict(user_data)
+#     print("\nPrediction: Purchased" if user_prediction[0] == 1 else "\nPrediction: Not Purchased")
+# except ValueError:
+#     print("Please enter valid numeric values for Age and Salary.")
+Accuracy:  0.925
+
+Confusion Matrix:
+[[50  2]
+ [ 4 24]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.93      0.96      0.94        52
+           1       0.92      0.86      0.89        28
+
+    accuracy                           0.93        80
+   macro avg       0.92      0.91      0.92        80
+weighted avg       0.92      0.93      0.92        80
+
+ 

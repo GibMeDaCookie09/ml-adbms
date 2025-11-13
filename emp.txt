@@ -1,0 +1,86 @@
+// Use a specific database
+use employee_db_2;
+
+// 1. Initial Data Insertion (Employee Management System)
+db.employees.drop();
+db.employees.insertMany([
+    { empid: 101, ename: "Saurabh", dept: "FE", city: "Baroda", education: "MBA", salary: 55000, post: "Manager", join_date: new Date("2018-01-20"), skills: ["Leadership", "Programming"] },
+    { empid: 102, ename: "Mahesh", dept: "FE", city: "Ahmedabad", education: "M.Tech", salary: 32000, post: "Asst. Prof.", join_date: new Date("2020-07-15"), skills: ["Programming", "Networking"] },
+    { empid: 103, ename: "Vivek", dept: "CSE", city: "Pune", education: "B.Com", salary: 40000, post: "Accountant", join_date: new Date("2019-05-20"), skills: ["Tally", "Auditing"] },
+    { empid: 104, ename: "Shalini", dept: "CSE", city: "Ahmedabad", education: "M.Tech", salary: 45000, post: "Prof.", join_date: new Date("2016-03-25"), skills: ["Data Structures", "Algorithms"] },
+    { empid: 105, ename: "Mohan", dept: "ETC", city: "Pune", education: "B.E.", salary: 35000, post: "Sr. Engineer", join_date: new Date("2021-02-01"), skills: ["Networking", "Security"] },
+    { empid: 106, ename: "Anjali", dept: "ETC", city: "Pune", education: "B.E.", salary: 31000, post: "Jr. Engineer", join_date: new Date("2022-08-01"), skills: ["Cloud", "Deployment"] },
+    { empid: 107, ename: "Shreya", dept: "ETC", city: "Pune", education: "B.Tech", salary: 60000, post: "Lead", join_date: new Date("2017-11-20"), skills: ["Python", "ML"] },
+    { empid: 108, ename: "Manoj", dept: "IT", city: "Bangalore", education: "B.Tech", salary: 38000, post: "Engineer", join_date: new Date("2021-09-01"), skills: ["Testing", "Automation"] }
+]);
+print("--- Data Insertion Complete ---");
+
+// --- Queries ---
+const today = new Date();
+
+// 1. List all the employee from institute.
+print("\n1. All employees:");
+db.employees.find().pretty();
+
+// 2. List the employee details that are from Baroda or Ahmedabad and working in CSE department.
+print("\n2. Employees from Baroda or Ahmedabad in CSE department:");
+db.employees.find({
+    dept: "CSE",
+    city: { $in: ["Baroda", "Ahmedabad"] }
+}).pretty();
+
+// 3. List of the empid, ename, department number and skill of employee whose join date is 20th of any month.
+print("\n3. Employees who joined on the 20th of any month:");
+db.employees.find({
+    $expr: { $eq: [{ $dayOfMonth: "$join_date" }, 20] }
+}, { _id: 0, empid: 1, ename: 1, dept: 1, skills: 1 }).pretty();
+
+// 4. Calculate total experience of employee (in years).
+print("\n4. Employee total experience (in years):");
+db.employees.aggregate([
+    { $addFields: {
+        experience_ms: { $subtract: [today, "$join_date"] }
+    }},
+    { $addFields: {
+        experience_years: { $divide: ["$experience_ms", 365.25 * 24 * 60 * 60 * 1000] } // Convert milliseconds to years
+    }},
+    { $project: { _id: 0, ename: 1, join_date: 1, experience_years: { $round: ["$experience_years", 2] } } }
+]).pretty();
+
+// 5. List the name of employee whose name staring with 's' or 'm' character who are working in FE department and having "Programming" skill.
+print('\n5. Employees (S/M name) in FE dept with "Programming" skill:');
+db.employees.find({
+    dept: "FE",
+    ename: { $regex: "^[SMsm]" }, // Case-insensitive start with S or M
+    skills: "Programming"
+}, { _id: 0, ename: 1, dept: 1, skills: 1 }).pretty();
+
+// 6. Count the no of employee working in ETC department of Pune Location.
+print("\n6. Count of employees in ETC department in Pune:");
+db.employees.countDocuments({ dept: "ETC", city: "Pune" });
+
+// 7. Calculate department wise total salary and display only those departments which pay maximum salary.
+print("\n7. Department that pays the maximum total salary:");
+db.employees.aggregate([
+    { $group: { _id: "$dept", total_salary: { $sum: "$salary" } } },
+    { $sort: { total_salary: -1 } },
+    { $limit: 1 }
+]).pretty();
+
+// 8. Perform Create Index, get Index and drop index operation on collection.
+print("\n8. Index Operations:");
+db.employees.createIndex({ dept: 1, city: 1 });
+print("Created compound index on 'dept' and 'city'.");
+print("Existing indexes:");
+db.employees.getIndexes();
+db.employees.dropIndex("dept_1_city_1");
+print("Dropped index on 'dept' and 'city'.");
+db.employees.getIndexes();
+
+// 9. Using MapReduce/aggregation Display total no of employees from each department.
+print("\n9. Total number of employees from each department (Aggregation):");
+db.employees.aggregate([
+    { $group: { _id: "$dept", total_employees: { $sum: 1 } } },
+    { $project: { _id: 0, department: "$_id", count: "$total_employees" } },
+    { $sort: { count: -1 } }
+]).pretty();

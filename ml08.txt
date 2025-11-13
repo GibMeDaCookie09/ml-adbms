@@ -1,0 +1,43 @@
+# Hierarchical Clustering
+import pandas as pd
+
+data = pd.read_csv('./Datasets/50_Startups.csv')
+data.head()
+
+data.isnull().sum()
+
+X = data[['PROFIT']]
+y = data['RND']
+from sklearn.preprocessing import StandardScaler
+
+X_scaled = StandardScaler().fit_transform(X)
+from scipy.cluster.hierarchy import dendrogram, linkage
+import matplotlib.pyplot as plt
+
+dendrogram(linkage(X_scaled, method='ward'))
+plt.title('Dendrogram for finding optimal no. of Clusters')
+plt.xlabel('Profit Index')
+plt.ylabel('Eucledian Distance')
+plt.grid()
+plt.show()
+
+from sklearn.cluster import AgglomerativeClustering
+
+hm = AgglomerativeClustering(n_clusters=3)
+labels = hm.fit_predict(X_scaled)
+labels
+
+plt.figure(figsize=(10,6))
+
+plt.subplot(1,2,1)
+plt.title("Unclustered Data")
+plt.xlabel('Profit')
+plt.ylabel('RND')
+plt.scatter(X, y)
+
+plt.subplot(1,2,2)
+plt.title("Clustered Data")
+plt.xlabel('Profit')
+plt.ylabel('RND')
+plt.scatter(X, y, c=labels)
+

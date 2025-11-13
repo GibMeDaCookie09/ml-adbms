@@ -1,0 +1,84 @@
+// Use a specific database
+use employee_db_1;
+
+// 1. Initial Data Insertion (Employee Management System)
+db.employees.drop();
+db.employees.insertMany([
+    { empid: 101, ename: "Alice Johnson", dept: "Administrative", city: "Pune", education: "MBA", salary: 55000, post: "Manager", join_date: new Date("2018-01-15"), skills: ["Leadership", "Budgeting"] },
+    { empid: 102, ename: "Bob Smith", dept: "CSE", city: "Mumbai", education: "M.Tech", salary: 32000, post: "Asst. Prof.", join_date: new Date("2020-07-20"), skills: ["Programming", "AI"] },
+    { empid: 103, ename: "Charlie Brown", dept: "Account", city: "Pune", education: "B.Com", salary: 40000, post: "Accountant", join_date: new Date("2019-05-10"), skills: ["Tally", "Auditing"] },
+    { empid: 104, ename: "David Lee", dept: "CSE", city: "Pune", education: "M.Tech", salary: 45000, post: "Prof.", join_date: new Date("2016-03-25"), skills: ["Data Structures", "Algorithms"] },
+    { empid: 105, ename: "Eve Williams", dept: "IT", city: "Delhi", education: "B.E.", salary: 35000, post: "Sr. Engineer", join_date: new Date("2021-02-01"), skills: ["Networking", "Security"] },
+    { empid: 106, ename: "Frank Martin", dept: "IT", city: "Delhi", education: "B.E.", salary: 31000, post: "Jr. Engineer", join_date: new Date("2022-08-01"), skills: ["Cloud", "Deployment"] },
+    { empid: 107, ename: "Grace Hall", dept: "IT", city: "Bangalore", education: "B.Tech", salary: 60000, post: "Lead", join_date: new Date("2017-11-11"), skills: ["Python", "Machine Learning"] },
+    { empid: 108, ename: "Heidi King", dept: "IT", city: "Bangalore", education: "B.Tech", salary: 38000, post: "Engineer", join_date: new Date("2021-09-01"), skills: ["Testing", "Automation"] },
+    { empid: 109, ename: "Ivy Chen", dept: "Library", city: "Pune", education: "M.Lib", salary: 28000, post: "Librarian", join_date: new Date("2023-04-01"), skills: ["Cataloging"] }
+]);
+print("--- Data Insertion Complete ---");
+
+// --- Queries ---
+
+// 1. List out the employees who are earning salary between 30000 and 45000.
+print("\n1. Employees with salary between 30000 and 45000:");
+db.employees.find({ salary: { $gte: 30000, $lte: 45000 } }, { _id: 0, ename: 1, salary: 1, dept: 1 }).pretty();
+
+// 2. List out the department name having at least four employees.
+print("\n2. Departments with at least four employees (Aggregation):");
+db.employees.aggregate([
+    { $group: { _id: "$dept", total_employees: { $sum: 1 } } },
+    { $match: { total_employees: { $gte: 4 } } },
+    { $project: { _id: 0, department_name: "$_id", total_employees: 1 } }
+]).pretty();
+
+// 3. Find out no. of employees working in "IT" department.
+print("\n3. Number of employees in IT department:");
+db.employees.countDocuments({ dept: "IT" });
+
+// 4. Display the name of employee who get the maximum salary.
+print("\n4. Employee with the maximum salary (Aggregation):");
+db.employees.aggregate([
+    { $sort: { salary: -1 } },
+    { $limit: 1 },
+    { $project: { _id: 0, ename: 1, salary: 1 } }
+]).pretty();
+
+// 5. Display Name of Department who have maximum of employees.
+print("\n5. Department with the maximum number of employees (Aggregation):");
+db.employees.aggregate([
+    { $group: { _id: "$dept", total_employees: { $sum: 1 } } },
+    { $sort: { total_employees: -1 } },
+    { $limit: 1 },
+    { $project: { _id: 0, department_name: "$_id", total_employees: 1 } }
+]).pretty();
+
+// 6. Update Name of Department from 'IT' to "Information Technology".
+print("\n6. Updating Department name 'IT' to 'Information Technology':");
+db.employees.updateMany(
+    { dept: "IT" },
+    { $set: { dept: "Information Technology" } }
+);
+print("Update successful. Sample document verification:");
+db.employees.find({ dept: "Information Technology" }, { _id: 0, ename: 1, dept: 1 }).limit(1).pretty();
+
+// 7. Perform Create Index, get Index and drop index operation on collection.
+print("\n7. Index Operations:");
+// Create Index on 'salary'
+db.employees.createIndex({ salary: 1 });
+print("Created index on 'salary'.");
+
+// Get Indexes
+print("Existing indexes:");
+db.employees.getIndexes();
+
+// Drop Index
+db.employees.dropIndex("salary_1");
+print("Dropped index on 'salary'.");
+db.employees.getIndexes();
+
+// 8. Write a MapReduce/Aggregation function to display total number of employees per department.
+print("\n8. Total number of employees per department (Aggregation):");
+db.employees.aggregate([
+    { $group: { _id: "$dept", total_employees: { $sum: 1 } } },
+    { $sort: { total_employees: -1 } },
+    { $project: { _id: 0, department: "$_id", count: "$total_employees" } }
+]).pretty();

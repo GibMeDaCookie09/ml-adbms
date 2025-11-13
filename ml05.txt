@@ -1,0 +1,57 @@
+# KMeans
+import warnings
+warnings.filterwarnings('ignore')
+
+import pandas as pd
+data = pd.read_csv('./Datasets/cities_r2.csv')
+data.head()
+
+X = data[['effective_literacy_rate_total']]
+y = data['population_total']
+from sklearn.preprocessing import StandardScaler
+
+X_scaled = StandardScaler().fit_transform(X)
+from sklearn.cluster import KMeans
+
+# Calculate SSE - Sum of squared Errors for no. of clusters
+inertia = []
+
+for k in range(1,11):
+  km = KMeans(n_clusters=k, random_state=0)
+  km.fit(X_scaled)
+  inertia.append(km.inertia_)
+
+inertia
+import matplotlib.pyplot as plt
+
+plt.plot(range(1,11), inertia, marker='o', color='r')
+plt.title('Elbow Method for finding Optimal K')
+plt.xlabel('Number of Clusters(K)')
+plt.ylabel('Inertia')
+plt.grid()
+plt.xticks(range(1,11))
+plt.show()
+
+km = KMeans(n_clusters=5, random_state=0)
+labels = km.fit_predict(X_scaled)
+labels
+
+centroids = km.cluster_centers_
+centroids
+array([[-1.29626717],
+       [ 0.34988242],
+       [-0.37878231],
+       [-2.88702584],
+       [ 1.10880191]])
+plt.figure(figsize=(16,9))
+plt.subplot(1, 2, 1)
+plt.title('Unclustered Data')
+plt.xlabel('Effective Literacy Rate')
+plt.ylabel('Total Population')
+plt.scatter(X, y)
+
+plt.subplot(1, 2, 2)
+plt.title('Clustered Data')
+plt.xlabel('Effective Literacy Rate')
+plt.ylabel('Total Population')
+plt.scatter(X, y, c=labels)

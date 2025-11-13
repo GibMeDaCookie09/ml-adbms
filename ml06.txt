@@ -1,0 +1,41 @@
+# Hierarchical Clustering
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import AgglomerativeClustering
+import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import dendrogram, linkage
+
+data = pd.read_csv('./Datasets/Hitters.csv')
+data.isnull().sum()
+
+data = data.dropna()
+data.isnull().sum()
+
+X = data[['CRuns']]
+y = data['Salary']
+X_scaled = StandardScaler().fit_transform(X)
+dendrogram(linkage(X_scaled, method='ward'))
+plt.title("Dendrogram for finding optimal no. of Clusters")
+plt.xlabel('CRuns Index')
+plt.ylabel('Euclidian Distance')
+plt.grid()
+plt.show()
+
+hm = AgglomerativeClustering(n_clusters=3)
+labels = hm.fit_predict(X_scaled)
+labels
+
+plt.figure(figsize=(10,6))
+
+plt.subplot(1,2,1)
+plt.title('Unclustered Data')
+plt.xlabel('CRuns')
+plt.ylabel('Salary')
+plt.scatter(X, y)
+
+plt.subplot(1,2,2)
+plt.title('Unclustered Data')
+plt.xlabel('CRuns')
+plt.ylabel('Salary')
+plt.scatter(X, y, c=labels)
+

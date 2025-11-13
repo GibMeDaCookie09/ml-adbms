@@ -1,0 +1,51 @@
+# Change the cols from pima-indians-diabetes.csv to 
+# Number_of_times_pregnant,Plasma_glucose_concentration,Diastolic_blood_pressure,Triceps_skin_fold_thickness,Serum_insulin,Body_mass_index,Diabetes_pedigree_function,Age,Class_variable
+# Decision Tree 
+import pandas as pd
+
+data = pd.read_csv('./Datasets/pima-indians-diabetes.csv')
+data.head()
+
+# Checking if all are numeric types
+data.dtypes
+
+# Fill NaN with mean of that col
+for col in data.columns:
+  data[col] = data[col].fillna(data[col].mean())
+# Split the data
+
+X = data.drop('Class_variable', axis=1)
+y = data['Class_variable']
+# Split data in train and test then apply DesicionTreeModel
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.2, random_state=42)
+# max_depth = 5 to avoid overfitting
+# If need all branches , remove max_depth
+model = DecisionTreeClassifier(criterion='entropy', max_depth=5, random_state=42)
+model.fit(X_train, y_train)
+
+# Evaluate the model
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+y_pred = model.predict(X_test)
+print("Accuracy : ",accuracy_score(y_test, y_pred))
+print("Classification Report : ",classification_report(y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+
+# Plot the decision tree
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(20,10))
+plot_tree(model, feature_names=X.columns, class_names=['No','Yes'], rounded=True, filled=True, fontsize=10)
+plt.title("Decision Tree for Pima Indians Diabetes Dataset")
+plt.show()
+
+# Test the decision tree on a random sample from the test set
+import random
+random_index = random.randint(0, len(X_test) - 1)
+random_sample = X_test.iloc[random_index:random_index+1]
+random_pred = model.predict(random_sample)
+print(f"Random Sample Prediction: {random_pred[0]}")
+print("Actual Value:", y_test.iloc[random_index])

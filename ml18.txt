@@ -1,0 +1,71 @@
+# Change the cols from pima-indians-diabetes.csv to 
+# Number_of_times_pregnant,Plasma_glucose_concentration,Diastolic_blood_pressure,Triceps_skin_fold_thickness,Serum_insulin,Body_mass_index,Diabetes_pedigree_function,Age,Class_variable
+# Naive Bayes
+# Import necessary libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Load the dataset with the correct headers
+column_names = [
+    "Number_of_times_pregnant", "Plasma_glucose_concentration", "Diastolic_blood_pressure", 
+    "Triceps_skin_fold_thickness", "Serum_insulin", "Body_mass_index", 
+    "Diabetes_pedigree_function", "Age", "Class_variable"
+]
+data = pd.read_csv('./Datasets/pima-indians-diabetes.csv', names=column_names, header=0)
+
+# Split data into features (X) and target (y)
+X = data.drop("Class_variable", axis=1)
+y = data["Class_variable"]
+
+# Split dataset into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Initialize the Naïve Bayes classifier
+model = GaussianNB()
+model.fit(X_train, y_train)
+
+# Predict on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy: ",accuracy)
+
+# Confusion matrix
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+# Classification report (precision, recall, f1-score)
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# Testing on a random sample from the test set
+# import random
+# random_index = random.randint(0, len(X_test) - 1)
+# random_sample = X_test.iloc[random_index:random_index+1]
+# random_pred = model.predict(random_sample)
+# print(f"Random Sample Prediction: {random_pred[0]}")
+# print("Actual Value:", y_test.iloc[random_index])
+
+
+# Take user input for a new sample
+# print("\nEnter values for a new sample to predict diabetes (0 for No, 1 for Yes):")
+# try:
+#     user_input = []
+#     user_input.append(float(input("Number of times pregnant: ")))
+#     user_input.append(float(input("Plasma glucose concentration: ")))
+#     user_input.append(float(input("Diastolic blood pressure: ")))
+#     user_input.append(float(input("Triceps skin fold thickness: ")))
+#     user_input.append(float(input("Serum insulin: ")))
+#     user_input.append(float(input("Body mass index: ")))
+#     user_input.append(float(input("Diabetes pedigree function: ")))
+#     user_input.append(float(input("Age: ")))
+
+#     # Convert the user input into a DataFrame to match the model's input format
+#     user_sample = pd.DataFrame([user_input], columns=X.columns)
+#     user_pred = nb_classifier.predict(user_sample)
+#     print("\nPredicted Result for the entered sample:", "Diabetic" if user_pred[0] == 1 else "Non-Diabetic")
+# except ValueError:
+#     print("Invalid input! Please enter numerical values for all features.")
